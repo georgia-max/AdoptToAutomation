@@ -1,0 +1,461 @@
+---
+title: "Individual_level_analysis"
+output: html_document
+---
+
+
+
+```{r}
+library(dplyr)
+library(ggplot2)
+library(chron)
+library(fixest)
+library(plm)
+library(lmtest)
+library(sandwich)
+library(psych)
+library(car)
+```
+
+
+```{r}
+tm <- 1
+
+for (i in c("2018")) {
+  for (j in c("06", "07", "08", "09", "10", "11", "12")) {
+    cripton_dat <- read.csv(paste("EVENT_60_MINUTES_anonymized_", i, j, "_all_events.csv", sep=""))
+    
+    cripton_dat$evdate <- chron(cripton_dat$DATE_EVENT, format = "d/m/y")
+    cripton_dat$firstdate <- chron(cripton_dat$RSE_BEGIN_DATE, format = "d/m/y")
+    cripton_dat$op_birthdate <- chron(cripton_dat$RSE_DATE_OF_BIRTH, format = "d/m/y")
+    cripton_dat$deg_startdate <- chron(cripton_dat$RSE_PERS_DEGREE_START, format = "d/m/y")
+    cripton_dat$time <- tm
+    
+    tm <- tm+1
+    
+    if (i=="2018" & j=="06") {
+      op_data <- cripton_dat
+    } else {
+      op_data <- rbind(op_data, cripton_dat)
+    }
+    
+  }
+  
+}
+
+remove(cripton_dat, i, j)
+```
+
+
+
+```{r}
+for (i in c("2019")) {
+  for (j in c("01", "02", "03", "04", "05", "06", "07", "08", "09", "10", "11", "12")) {
+    cripton_dat <- read.csv(paste("EVENT_60_MINUTES_anonymized_", i, j, "_all_events.csv", sep=""))
+    
+    cripton_dat$evdate <- chron(cripton_dat$DATE_EVENT, format = "d/m/y")
+    cripton_dat$firstdate <- chron(cripton_dat$RSE_BEGIN_DATE, format = "d/m/y")
+    cripton_dat$op_birthdate <- chron(cripton_dat$RSE_DATE_OF_BIRTH, format = "d/m/y")
+    cripton_dat$deg_startdate <- chron(cripton_dat$RSE_PERS_DEGREE_START, format = "d/m/y")
+    cripton_dat$time <- tm
+    
+    tm <- tm+1
+    op_data <- rbind(op_data, cripton_dat)
+    
+  }
+  
+}
+
+remove(cripton_dat, i, j)
+```
+
+
+```{r}
+for (i in c("2020")) {
+  for (j in c("01", "02", "03")) {
+    cripton_dat <- read.csv(paste("EVENT_60_MINUTES_anonymized_", i, j, "_all_events.csv", sep=""))
+    
+    cripton_dat$evdate <- chron(cripton_dat$DATE_EVENT, format = "d/m/y")
+    cripton_dat$firstdate <- chron(cripton_dat$RSE_BEGIN_DATE, format = "d/m/y")
+    cripton_dat$op_birthdate <- chron(cripton_dat$RSE_DATE_OF_BIRTH, format = "d/m/y")
+    cripton_dat$deg_startdate <- chron(cripton_dat$RSE_PERS_DEGREE_START, format = "d/m/y")
+    cripton_dat$time <- tm
+    
+    tm <- tm+1
+    
+    op_data <- rbind(op_data, cripton_dat)
+
+  }
+  
+}
+
+remove(cripton_dat, i, j, tm)
+op_data <- as.data.frame(op_data)
+op_data$female <- ifelse(op_data$RSE_SEX=="F", 1, 0)
+```
+
+
+```{r}
+op_data <- subset(op_data, is.na(op_data$RSE_ID_ANONYM)==FALSE)
+op_data <- subset(op_data, op_data$WS_ROLE=="TC" | op_data$WS_ROLE=="OP")
+
+op_data$op_first_date <- ifelse(op_data$RSE_PERS_DEGREE=="N3", op_data$deg_startdate, 0)
+
+op_data <- op_data %>%
+  group_by(RSE_ID_ANONYM) %>%
+  mutate(op_start_date = max(op_first_date))
+
+op_data$start_insample <- ifelse(op_data$op_first_date-chron("01/06/18", format = "d/m/y")>-1, 1, 0)
+
+```
+
+
+```{r}
+op_data$move_count <- ifelse(op_data$TASK_2=="1.1 MOVE", op_data$EVENT_COUNT, 0)
+op_data$move_active_count <- ifelse(op_data$TASK_2=="1.1 MOVE" & op_data$ACTIVE_EVENT==1, op_data$EVENT_COUNT, 0)
+op_data$move_passive_count <- ifelse(op_data$TASK_2=="1.1 MOVE" & op_data$ACTIVE_EVENT==0, op_data$EVENT_COUNT, 0)
+op_data$adapt_count <- ifelse(op_data$TASK_2=="1.2 ADAPT", op_data$EVENT_COUNT, 0)
+op_data$anticip_count <- ifelse(op_data$TASK_2=="1.3 ANTICIP", op_data$EVENT_COUNT, 0)
+op_data$aut_count <- ifelse(op_data$TASK_2=="1.4 AUT", op_data$EVENT_COUNT, 0)
+op_data$safety_count <- ifelse(op_data$TASK_2=="2.1 SAFETY", op_data$EVENT_COUNT, 0)
+op_data$phone_count <- ifelse(op_data$TASK_2=="4.1 PHONE", op_data$EVENT_COUNT, 0)
+op_data$error_count <- ifelse(op_data$TASK_2=="5.1 ERROR", op_data$EVENT_COUNT, 0)
+op_data$sig_filled <- ifelse(is.na(op_data$SIG_CATEGORY)==TRUE, 0, op_data$SIG_CATEGORY)
+op_data$sig_1 <- ifelse(op_data$sig_filled==1, op_data$move_count, 0)
+op_data$sig_2 <- ifelse(op_data$sig_filled==2, op_data$move_count, 0)
+op_data$sig_3 <- ifelse(op_data$sig_filled==3, op_data$move_count, 0)
+op_data$sig_ind <- ifelse(op_data$sig_filled>0, op_data$move_count, 0)
+op_data$delay_num <- as.numeric(gsub(",", ".", op_data$DELAY_avg))
+op_data$delay_filled <- ifelse(is.na(op_data$delay_num)==TRUE, 0, op_data$delay_num)
+op_data$timeorder <- as.numeric((op_data$evdate-chron("01/01/19", format = "d/m/y"))*100 + op_data$HOUR_EVENT)
+
+
+op_data <- op_data %>%
+  group_by(RSE_ID_ANONYM, timeorder) %>%
+  mutate(move_cnt_hr = sum(move_count),
+         move_act_cnt_hr = sum(move_active_count),
+         move_pass_cnt_hr = sum(move_passive_count),
+         adapt_cnt_hr = sum(adapt_count),
+         anticip_cnt_hr = sum(anticip_count),
+         aut_cnt_hr = sum(aut_count),
+         safety_cnt_hr = sum(safety_count),
+         phone_cnt_hr = sum(phone_count),
+         error_cnt_hr = sum(error_count),
+         all_weight_hr = sum(EVENT_WEIGHT),
+         sig_tot_hr = sum(sig_filled),
+         sig_tot_1 = sum(sig_1),
+         sig_tot_2 = sum(sig_2),
+         sig_tot_3 = sum(sig_3),
+         sig_ind_tot = sum(sig_ind),
+         delay_tot_hr = sum(delay_filled),
+         all_cnt_hr = sum(EVENT_COUNT)) %>%
+  ungroup
+
+op_data <- as.data.frame(op_data)
+
+op_data_hr <- op_data %>%
+  group_by(RSE_ID_ANONYM, timeorder) %>%
+  arrange(RSE_ID_ANONYM, timeorder) %>% 
+  slice(1) %>%
+  ungroup
+
+op_data_hr$age <- op_data_hr$evdate - op_data_hr$op_birthdate
+op_data_hr$female <- ifelse(op_data_hr$RSE_SEX=="F", 1, 0)
+
+op_data_hr <- subset(op_data_hr, select = c(DMU_60_MINUTES, TCC_ANONYM, WS_NO, time, DAY_OF_WEEK, HOUR_EVENT, WS_ROLE, RSE_ID_ANONYM, timeorder, evdate, firstdate, op_birthdate, deg_startdate, RSE_SEX, RSE_PERS_DEGREE, move_cnt_hr, move_act_cnt_hr, move_pass_cnt_hr, adapt_cnt_hr, anticip_cnt_hr, aut_cnt_hr, safety_cnt_hr, phone_cnt_hr, error_cnt_hr, all_weight_hr, sig_tot_hr, sig_tot_1, sig_tot_2, sig_tot_3, sig_ind_tot, delay_tot_hr, all_cnt_hr, start_insample, age, female))
+```
+
+
+
+```{r}
+op_data_hr$complexity <- ifelse(op_data_hr$sig_ind_tot ==0, 0, op_data_hr$sig_tot_hr /op_data_hr$sig_ind_tot)
+op_data_hr$complexity <- ifelse(op_data_hr$complexity<1, 1, op_data_hr$complexity)
+op_data_hr$complex_alt <- ifelse(op_data_hr$sig_ind_tot ==0, 0, (op_data_hr$sig_tot_1 + 3*op_data_hr$sig_tot_2 + 3*op_data_hr$sig_tot_3) /op_data_hr$sig_ind_tot)
+op_data_hr$complex_23 <- ifelse(op_data_hr$sig_ind_tot ==0, 0, (op_data_hr$sig_tot_1*0 + 1*op_data_hr$sig_tot_2 + 1*op_data_hr$sig_tot_3) /op_data_hr$sig_ind_tot)
+op_data_hr$weight_per_cnt <- op_data_hr$all_weight_hr/op_data_hr$all_cnt_hr
+op_data_hr$frac_ads <- ifelse(op_data_hr$move_cnt_hr==0, 0, op_data_hr$move_pass_cnt_hr / op_data_hr$move_cnt_hr)
+op_data_hr$adapt_frac <- ifelse(op_data_hr$all_cnt_hr==0, 0, op_data_hr$adapt_cnt_hr / op_data_hr$all_cnt_hr)
+op_data_hr$anticip_frac <- ifelse(op_data_hr$all_cnt_hr==0, 0, op_data_hr$anticip_cnt_hr / op_data_hr$all_cnt_hr)
+
+
+op_data_hr <- op_data_hr %>% 
+  group_by(RSE_ID_ANONYM) %>% 
+  dplyr::mutate(error_l1 = dplyr::lag(error_cnt_hr, n=1, order_by=timeorder, default=0)) %>%
+  as.data.frame() %>%
+  ungroup
+
+```
+
+
+
+```{r}
+op_data_hr <- op_data_hr %>% 
+  group_by(RSE_ID_ANONYM) %>% 
+  mutate(cum_ads = cumsum(move_pass_cnt_hr),
+         cum_manual = cumsum(move_act_cnt_hr),
+         cum_allmove = cumsum(move_cnt_hr))
+
+op_data_hr$past_ads <- op_data_hr$cum_ads - op_data_hr$move_pass_cnt_hr
+op_data_hr$past_manual <- op_data_hr$cum_manual - op_data_hr$move_act_cnt_hr
+op_data_hr$past_allmove <- op_data_hr$cum_allmove - op_data_hr$move_cnt_hr
+op_data_hr$past_ads_frac <- op_data_hr$past_ads/op_data_hr$past_allmove
+op_data_hr$past_ads_frac <- ifelse(is.na(op_data_hr$past_ads_frac)==TRUE, 0, op_data_hr$past_ads_frac)
+op_data_hr$mnth <- months(op_data_hr$evdate)
+op_data_hr$yr <- years(op_data_hr$evdate)
+op_data_hr$op_exp_yrs <- as.numeric(op_data_hr$evdate - op_data_hr$deg_startdate) / 365
+```
+
+
+
+```{r}
+new_op_data <- subset(op_data_hr, op_data_hr$start_insample==1)
+new_op_data <- subset(new_op_data, new_op_data$sig_ind_tot>0)
+```
+
+
+
+```{r}
+new_op_data <- new_op_data %>% 
+  group_by(RSE_ID_ANONYM) %>% 
+  mutate(min_frac_ads = min(frac_ads),
+         max_frac_ads = max(frac_ads),
+         tot_frac_ads = sum(frac_ads))
+```
+
+
+```{r}
+new_op_data$ln_past_ads <- log(new_op_data$past_ads+1)
+new_op_data$ln_all_cnt <- log(new_op_data$all_cnt_hr+1)
+new_op_data$delay_hours <- new_op_data$delay_tot_hr/3600
+
+describe(subset(new_op_data, select=c(frac_ads, past_ads, ln_past_ads, all_cnt_hr, ln_all_cnt, complexity, complex_alt, complex_23, adapt_frac, anticip_frac, error_l1, phone_cnt_hr, delay_hours, op_exp_yrs)))
+
+corr.test(subset(new_op_data, select=c(frac_ads, ln_past_ads, ln_all_cnt, complex_alt, adapt_frac, anticip_frac, error_l1, phone_cnt_hr, delay_hours, op_exp_yrs)))
+```
+
+
+
+```{r}
+new_op_data$ln_past_ads <- log(new_op_data$past_ads+1)
+new_op_data$ln_all_cnt <- log(new_op_data$all_cnt_hr+1)
+new_op_data$delay_hours <- new_op_data$delay_tot_hr/3600
+new_op_data$age_yrs <- new_op_data$age/365
+
+ln1 <- lm(frac_ads ~  ln_past_ads + ln_all_cnt + complex_alt + adapt_frac + anticip_frac + error_l1 + phone_cnt_hr + delay_tot_hr + op_exp_yrs, data = new_op_data)
+
+vif(ln1)
+```
+
+
+```{r}
+new_op_data$ln_past_ads_sq <- log(new_op_data$past_ads+1)^2
+new_op_data$past_ads_sq <- new_op_data$past_ads^2
+
+fe1 <- feols(frac_ads ~  ln_past_ads + ln_past_ads_sq + ln_all_cnt + ln_all_cnt*ln_past_ads + ln_all_cnt*ln_past_ads_sq + complex_23 + complex_23* ln_past_ads + complex_23*ln_past_ads_sq + adapt_frac + anticip_frac + error_l1 + phone_cnt_hr + delay_hours + op_exp_yrs | RSE_ID_ANONYM + HOUR_EVENT + mnth + DAY_OF_WEEK + yr, new_op_data)
+
+summary(fe1)
+```
+
+
+```{r}
+new_op_data$ln_past_ads_sq <- log(new_op_data$past_ads+1)^2
+new_op_data$past_ads_sq <- new_op_data$past_ads^2
+
+fe2 <- plm(frac_ads ~  ln_past_ads + ln_past_ads_sq + ln_all_cnt + ln_all_cnt*ln_past_ads + ln_all_cnt*ln_past_ads_sq + complex_alt + complex_alt* ln_past_ads + complex_alt*ln_past_ads_sq + adapt_frac + anticip_frac + error_l1 + phone_cnt_hr + delay_hours + op_exp_yrs + factor(HOUR_EVENT) + factor(mnth) + factor(DAY_OF_WEEK) + factor(yr), data= new_op_data, model= "within", index= c("RSE_ID_ANONYM", "timeorder"), effect= "time")
+
+summary(fe2, vcov = function(x) vcovHC(x, method="white2", type="HC1", cluster="group"))
+```
+
+
+```{r}
+fe2 <- plm(frac_ads ~  ln_past_ads + ln_past_ads_sq + ln_all_cnt + complex_alt + complex_alt* ln_past_ads + complex_alt*ln_past_ads_sq + adapt_frac + anticip_frac + error_l1 + phone_cnt_hr + delay_hours + op_exp_yrs + factor(HOUR_EVENT) + factor(mnth) + factor(DAY_OF_WEEK) + factor(yr), data= new_op_data, model= "within", index= c("RSE_ID_ANONYM", "timeorder"), effect= "time")
+
+summary(fe2, vcov = function(x) vcovHC(x, method="white2", type="HC1", cluster="group"))
+```
+
+
+```{r}
+fe2 <- plm(frac_ads ~  ln_past_ads + ln_past_ads_sq + ln_all_cnt + ln_all_cnt*ln_past_ads + ln_all_cnt*ln_past_ads_sq + complex_alt + adapt_frac + anticip_frac + error_l1 + phone_cnt_hr + delay_hours + op_exp_yrs + factor(HOUR_EVENT) + factor(mnth) + factor(DAY_OF_WEEK) + factor(yr), data= new_op_data, model= "within", index= c("RSE_ID_ANONYM", "timeorder"), effect= "individual")
+
+summary(fe2, vcov = function(x) vcovHC(x, method="white2", type="HC1", cluster="group"))
+```
+
+
+```{r}
+fe2 <- plm(frac_ads ~  ln_past_ads + ln_past_ads_sq + ln_all_cnt + complex_alt + adapt_frac + anticip_frac + error_l1 + phone_cnt_hr + delay_hours + op_exp_yrs + factor(HOUR_EVENT) + factor(mnth) + factor(DAY_OF_WEEK) + factor(yr), data= new_op_data, model= "within", index= c("RSE_ID_ANONYM", "timeorder"), effect= "individual")
+
+summary(fe2, vcov = function(x) vcovHC(x, method="white2", type="HC1", cluster="group"))
+```
+
+
+```{r}
+fe2 <- plm(frac_ads ~  ln_past_ads + ln_all_cnt + complex_alt + adapt_frac + anticip_frac + error_l1 + phone_cnt_hr + delay_hours + op_exp_yrs + factor(HOUR_EVENT) + factor(mnth) + factor(DAY_OF_WEEK) + factor(yr), data= new_op_data, model= "within", index= c("RSE_ID_ANONYM", "timeorder"), effect= "time")
+
+summary(fe2, vcov = function(x) vcovHC(x, method="white2", type="HC1", cluster="group"))
+```
+
+
+```{r}
+fe2 <- plm(frac_ads ~ adapt_frac + anticip_frac + error_l1 + phone_cnt_hr + delay_hours + op_exp_yrs + factor(HOUR_EVENT) + factor(mnth) + factor(DAY_OF_WEEK) + factor(yr), data= new_op_data, model= "within", index= c("RSE_ID_ANONYM", "timeorder"), effect= "time")
+
+summary(fe2, vcov = function(x) vcovHC(x, method="white2", type="HC1", cluster="group"))
+```
+
+
+
+
+
+```{r}
+gee1 <- gee(frac_ads ~  ln_past_ads + ln_past_ads_sq + ln_all_cnt + ln_all_cnt*ln_past_ads + ln_all_cnt*ln_past_ads_sq + complex_alt + complex_alt* ln_past_ads + complex_alt*ln_past_ads_sq + adapt_frac + anticip_frac + error_l1 + phone_cnt_hr + delay_hours + op_exp_yrs + factor(HOUR_EVENT) + factor(mnth) + factor(DAY_OF_WEEK) + factor(yr), data= new_op_data, id= RSE_ID_ANONYM, family= gaussian, corstr= "independence", silent=TRUE)
+
+summary(gee1)
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+```{r}
+ggplot(new_op_data, aes(x=past_ads, y=frac_ads)) +
+  geom_point() + 
+  stat_smooth(method = "lm", formula = y ~ x + I(x^2), se=FALSE)
+```
+
+
+
+
+```{r}
+mansci_data <- subset(new_op_data, select=c(frac_ads, past_allmove, past_ads, past_manual, past_ads_frac, all_cnt_hr, complex_alt, adapt_frac, anticip_frac, error_l1, phone_cnt_hr, delay_tot_hr, RSE_ID_ANONYM, HOUR_EVENT, DAY_OF_WEEK, mnth, yr, RSE_SEX))
+
+mansci_data <- mansci_data %>%
+  rename(ads_frac_moves = frac_ads, 
+         operator_past_exp = past_allmove, 
+         operator_past_ads_exp = past_ads,
+         operator_past_manual_exp = past_manual,
+         frac_past_exp_ads = past_ads_frac, 
+         work_volume = all_cnt_hr, 
+         work_complexity = complex_alt, 
+         adapt_work = adapt_frac, 
+         forecast_work = anticip_frac, 
+         errors_prior_hr = error_l1, 
+         phone_calls = phone_cnt_hr, 
+         delays_seconds = delay_tot_hr,
+         op_gender = RSE_SEX)
+
+write.csv(mansci_data, "man_sci_data.csv", row.names = FALSE)
+```
+
+
+
+
+
+
+
+
+
+
+
+```{r}
+new_op_data$ln_past_ads_sq <- log(new_op_data$past_ads+1)^2
+new_op_data$past_ads_sq <- new_op_data$past_ads^2
+
+fe2 <- plm(frac_ads ~  ln_past_ads + ln_past_ads_sq + ln_all_cnt + ln_all_cnt*ln_past_ads + ln_all_cnt*ln_past_ads_sq + complex_alt + complex_alt* ln_past_ads + complex_alt*ln_past_ads_sq + adapt_frac + anticip_frac + error_l1 + phone_cnt_hr + delay_hours + op_exp_yrs + female + age_yrs + factor(HOUR_EVENT) + factor(mnth) + factor(DAY_OF_WEEK) + factor(yr), data= new_op_data, model= "within", index= "TCC_ANONYM", effect= "individual")
+
+summary(fe2, vcov = function(x) vcovHC(x, method="white2", type="HC1", cluster="group"))
+```
+
+
+```{r}
+fe2 <- plm(frac_ads ~  ln_past_ads + ln_past_ads_sq + ln_all_cnt + complex_alt + complex_alt* ln_past_ads + complex_alt*ln_past_ads_sq + adapt_frac + anticip_frac + error_l1 + phone_cnt_hr + delay_hours + op_exp_yrs + female + age_yrs + factor(HOUR_EVENT) + factor(mnth) + factor(DAY_OF_WEEK) + factor(yr), data= new_op_data, model= "within", index= "TCC_ANONYM", effect= "individual")
+
+summary(fe2, vcov = function(x) vcovHC(x, method="white2", type="HC1", cluster="group"))
+```
+
+
+```{r}
+fe2 <- plm(frac_ads ~  ln_past_ads + ln_past_ads_sq + ln_all_cnt + ln_all_cnt*ln_past_ads + ln_all_cnt*ln_past_ads_sq + complex_alt + adapt_frac + anticip_frac + error_l1 + phone_cnt_hr + delay_hours + op_exp_yrs + female + age_yrs + factor(HOUR_EVENT) + factor(mnth) + factor(DAY_OF_WEEK) + factor(yr), data= new_op_data, model= "within", index= "TCC_ANONYM", effect= "individual")
+
+summary(fe2, vcov = function(x) vcovHC(x, method="white2", type="HC1", cluster="group"))
+```
+
+
+```{r}
+fe2 <- plm(frac_ads ~  ln_past_ads + ln_past_ads_sq + ln_all_cnt + complex_alt + adapt_frac + anticip_frac + error_l1 + phone_cnt_hr + delay_hours + op_exp_yrs + female + age_yrs + factor(HOUR_EVENT) + factor(mnth) + factor(DAY_OF_WEEK) + factor(yr), data= new_op_data, model= "within", index= "TCC_ANONYM", effect= "individual")
+
+summary(fe2, vcov = function(x) vcovHC(x, method="white2", type="HC1", cluster="group"))
+```
+
+
+```{r}
+fe2 <- plm(frac_ads ~  ln_past_ads + ln_all_cnt + complex_alt + adapt_frac + anticip_frac + error_l1 + phone_cnt_hr + delay_hours + op_exp_yrs + female + age_yrs + factor(HOUR_EVENT) + factor(mnth) + factor(DAY_OF_WEEK) + factor(yr), data= new_op_data, model= "within", index= "TCC_ANONYM", effect= "individual")
+
+summary(fe2, vcov = function(x) vcovHC(x, method="white2", type="HC1", cluster="group"))
+```
+
+
+```{r}
+fe2 <- plm(frac_ads ~ adapt_frac + anticip_frac + error_l1 + phone_cnt_hr + delay_hours + op_exp_yrs + female + age_yrs + factor(HOUR_EVENT) + factor(mnth) + factor(DAY_OF_WEEK) + factor(yr), data= new_op_data, model= "within", index= "TCC_ANONYM", effect= "individual")
+
+summary(fe2, vcov = function(x) vcovHC(x, method="white2", type="HC1", cluster="group"))
+```
+
+
+```{r}
+new_op_sum <- new_op_data %>%
+  group_by(RSE_ID_ANONYM) %>%
+  summarise(avg_frac_ads = mean(frac_ads))
+
+ggplot(new_op_sum, aes(x=avg_frac_ads)) + geom_histogram() + theme_minimal() + xlab("Average Algorithm Use Fraction by Controller") + ylab("")
+```
+
+```{r}
+preddf <- read.csv("data input for figures.csv")
+preddf$HOUR_EVENT <- as.factor(preddf$HOUR_EVENT)
+preddf$DAY_OF_WEEK <- as.factor(preddf$DAY_OF_WEEK)
+preddf$mnth <- as.factor(preddf$mnth)
+preddf$yr <- as.factor(preddf$yr)
+
+
+lm_pred <- lm(frac_ads ~  ln_past_ads + ln_past_ads_sq + ln_all_cnt + complex_alt + adapt_frac + anticip_frac + error_l1 + phone_cnt_hr + delay_hours + op_exp_yrs + factor(HOUR_EVENT) + factor(mnth) + factor(DAY_OF_WEEK) + factor(yr) + factor(RSE_ID_ANONYM), data= new_op_data)
+
+preddf$frac_ads <- predict(lm_pred, newdata= preddf)
+
+lm_pred <- lm(frac_ads ~ ln_past_ads + ln_past_ads_sq + ln_all_cnt + ln_all_cnt*ln_past_ads + ln_all_cnt*ln_past_ads_sq + complex_alt + complex_alt* ln_past_ads + complex_alt*ln_past_ads_sq + adapt_frac + anticip_frac + error_l1 + phone_cnt_hr + delay_hours + op_exp_yrs + factor(HOUR_EVENT) + factor(mnth) + factor(DAY_OF_WEEK) + factor(yr) + factor(RSE_ID_ANONYM), data= new_op_data)
+
+preddf$complex_alt <- 1.87
+preddf$ln_all_cnt <- 4.92
+preddf$high_volume <- predict(lm_pred, newdata= preddf)
+
+preddf$ln_all_cnt <- 3.2
+preddf$low_volume <- predict(lm_pred, newdata= preddf)
+
+preddf$ln_all_cnt <- 4.06
+preddf$complex_alt <- 2.44
+preddf$high_complex <- predict(lm_pred, newdata= preddf)
+
+preddf$complex_alt <- 1.3
+preddf$low_complex <- predict(lm_pred, newdata= preddf)
+
+write.csv(preddf, "predicted data.csv")
+```
+
+
+```{r}
+ggplot(preddf, aes(x=ln_past_ads, y=frac_ads)) + geom_line() + theme_minimal() + xlab("Controller Algorithm Experience") + ylab("Algorithm Use Current Hour")
+```
+
+
