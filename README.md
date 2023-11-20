@@ -46,7 +46,12 @@ To set up the project on your local machine:
 The clean code is in the [src](https://github.com/georgia-max/AdoptToAutomation/tree/master/src) folder. 
 The [temp](https://github.com/georgia-max/AdoptToAutomation/tree/master/temp) folder contains temporary code that I need to clean up. 
 
+The Dataset is stored in the Dataset folder 
+
 ## TODO
 
 1. Clean up temporary code
 2. ADD analysis to account for endogeneity issue, see file *MSOM_Decision*
+
+## Notes: 
+1. Currently, the data anlaysis is performed in this dataset: **CRIPTON_60_MINUTES_anonymized_all.csv** 
