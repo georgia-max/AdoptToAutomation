@@ -1,6 +1,9 @@
+
+
 source("utils/dataset_builder.R", encoding = "UTF-8")
 
 library(vtable)
+
 
 # Load Data
 
@@ -22,10 +25,10 @@ library(vtable)
 
 # Read CRIPTON dataset.
 df_raw <- read_csv(
-    "data/CRIPTON_60_MINUTES_anonymized_all.csv",
-    col_types = cols(.default = "c",
-    DATE_EVENT = col_date(format = "%Y-%m-%d")
-    )
+  "data/CRIPTON_60_MINUTES_anonymized_all.csv",
+  col_types = cols(.default = "c",
+                   DATE_EVENT = col_date(format = "%Y-%m-%d")
+  )
 )
 
 # # Specify the columns to transform
@@ -43,23 +46,23 @@ df_raw <- read_csv(
 
 df <- df_raw %>%
   mutate(
-         MOVE_ALL_count = as.numeric(gsub(",", "", MOVE_ALL_count), na.rm = TRUE),
-         MOVE_AUTO_count = as.numeric(gsub(",", "", MOVE_AUTO_count), na.rm = TRUE), # nolint
-         MOVE_MAN_count = as.numeric(MOVE_MAN_count, na.rm = TRUE),
-         ADAPTATIONS_count = as.numeric(ADAPTATIONS_count, na.rm = TRUE),
-         CHANGE_AUTO_AA_count = as.numeric(CHANGE_AUTO_AA_count, na.rm = TRUE),
-         CHANGE_AUTO_WW_count = as.numeric(CHANGE_AUTO_WW_count, na.rm = TRUE),
-         PHONE_IN_count = as.numeric(PHONE_IN_count, na.rm = TRUE),
-         PHONE_OUT_count = as.numeric(PHONE_OUT_count, na.rm = TRUE),
-         MESSAGE_OTHER_count = as.numeric(MESSAGE_OTHER_count, na.rm = TRUE),
-         MESSAGE_HUMAN_ERROR_count = as.numeric(MESSAGE_HUMAN_ERROR_count),# na.rm = TRUE),
-         JUSTIF_count = as.numeric(JUSTIF_count, na.rm = TRUE),
-         #TRAF_DENS = as.numeric(gsub(",", "", TRAF_DENS)), #na.rm = TRUE),
-         TRAF_COMP = as.numeric(gsub(",", "", TRAF_COMP)),# na.rm = TRUE),
-         #RAILWAY_DAYS = as.numeric(gsub(",", "", RAILWAY_DAYS), na.rm = TRUE),
-         #EXPERIENCE_DAYS = as.numeric(gsub(",", "", EXPERIENCE_DAYS), na.rm = TRUE),
-         #AGE = as.numeric(gsub(",", "", AGE), na.rm = TRUE)
-         )
+    MOVE_ALL_count = as.numeric(gsub(",", "", MOVE_ALL_count), na.rm = TRUE),
+    MOVE_AUTO_count = as.numeric(gsub(",", "", MOVE_AUTO_count), na.rm = TRUE), # nolint
+    MOVE_MAN_count = as.numeric(MOVE_MAN_count, na.rm = TRUE),
+    ADAPTATIONS_count = as.numeric(ADAPTATIONS_count, na.rm = TRUE),
+    CHANGE_AUTO_AA_count = as.numeric(CHANGE_AUTO_AA_count, na.rm = TRUE),
+    CHANGE_AUTO_WW_count = as.numeric(CHANGE_AUTO_WW_count, na.rm = TRUE),
+    PHONE_IN_count = as.numeric(PHONE_IN_count, na.rm = TRUE),
+    PHONE_OUT_count = as.numeric(PHONE_OUT_count, na.rm = TRUE),
+    MESSAGE_OTHER_count = as.numeric(MESSAGE_OTHER_count, na.rm = TRUE),
+    MESSAGE_HUMAN_ERROR_count = as.numeric(MESSAGE_HUMAN_ERROR_count),# na.rm = TRUE),
+    JUSTIF_count = as.numeric(JUSTIF_count, na.rm = TRUE),
+    #TRAF_DENS = as.numeric(gsub(",", "", TRAF_DENS)), #na.rm = TRUE),
+    TRAF_COMP = as.numeric(gsub(",", "", TRAF_COMP)),# na.rm = TRUE),
+    #RAILWAY_DAYS = as.numeric(gsub(",", "", RAILWAY_DAYS), na.rm = TRUE),
+    #EXPERIENCE_DAYS = as.numeric(gsub(",", "", EXPERIENCE_DAYS), na.rm = TRUE),
+    #AGE = as.numeric(gsub(",", "", AGE), na.rm = TRUE)
+  )
 
 # find row indices with NAs
 # na_rows <- which(apply(is.na(df), 1, any))
@@ -82,7 +85,7 @@ df$TotalWL <-  df$MOVE_MAN_count + df$MOVE_AUTO_count
 
 
 df$Manual_count <- df$MOVE_MAN_count + df$CHANGE_AUTO_AA_count +
-     df$CHANGE_AUTO_WW_count + df$ADAPTATIONS_count
+  df$CHANGE_AUTO_WW_count + df$ADAPTATIONS_count
 
 
 
