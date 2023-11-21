@@ -1,4 +1,4 @@
-source("/Users/Georgia 1/Desktop/Workload&ErrorPaper/MWL_R_Project/R/dataset_builder.R", encoding = "UTF-8")
+source("utils/dataset_builder.R", encoding = "UTF-8")
 
 library(vtable)
 
@@ -22,8 +22,7 @@ library(vtable)
 
 # Read CRIPTON dataset.
 df_raw <- read_csv(
-    "/Users/Georgia 1/Desktop/Workload&ErrorPaper/MWL_R_Project/Data/PeterMS_Paper/CRIPTON_60_MINUTES_anonymized_all.csv",
-
+    "data/CRIPTON_60_MINUTES_anonymized_all.csv",
     col_types = cols(.default = "c",
     DATE_EVENT = col_date(format = "%Y-%m-%d")
     )
@@ -156,7 +155,7 @@ df2 <- subset(df, select = c('Error_rate','Auto_fraction',"TotalWL","PHONE","MES
 
 vcorr <- round(cor(df2),3)
 
-write.xlsx(vcorr, "./Event_Based_results/Addition_manual_corr_050523.xlsx")
+# write.xlsx(vcorr, "./Event_Based_results/Addition_manual_corr_050523.xlsx")
 
 
 
