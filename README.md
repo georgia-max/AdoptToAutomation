@@ -47,7 +47,6 @@ The clean code is in the [src](https://github.com/georgia-max/AdoptToAutomation/
 The [temp](https://github.com/georgia-max/AdoptToAutomation/tree/master/temp) folder contains temporary code that I need to clean up. 
 
 The Dataset is stored in the Dataset folder. 
-
 First, run the data_prepare.R file to get the preprocessed dataset. 
 Second, run the main.R file to get the regression results. 
 
