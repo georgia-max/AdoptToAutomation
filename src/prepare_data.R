@@ -32,7 +32,9 @@ transform_columns <- function(df, columns) {
 }
 
 numeric_columns <- c("MOVE_ALL_count", "MOVE_AUTO_count", "MOVE_MAN_count",
-                     "ADAPTATIONS_count", "CHANGE_AUTO_AA_count", "CHANGE_AUTO_WW_count",
+                     "ADAPTATIONS_count", "CHANGE_AUTO_AA_count", "CHANGE_AUTO_DD_count", 
+                     "CHANGE_AUTO_WW_count", "CHANGE_AUTO_REMOVE_TIMER_count", "SAFETY_count",
+                     "MOVE_MAN_weight", "MOVE_AUTO_weight", 
                      "PHONE_IN_count", "PHONE_OUT_count", "MESSAGE_OTHER_count", 
                      "MESSAGE_HUMAN_ERROR_count", "JUSTIF_count", 'TRAF_COMP', 'TRAF_DENS_1')
 
@@ -48,6 +50,8 @@ df <- change_column_names(df, c("MESSAGE_HUMAN_ERROR_count", "HOUR_EVENT"),
 df$Date_hour <- df$DATE_EVENT + hours(df$Hour)
 df$PHONE = df$PHONE_IN_count + df$PHONE_OUT_count
 df$TotalWL <-  df$MOVE_MAN_count + df$MOVE_AUTO_count 
+df$TotalWL_weight <-  df$MOVE_MAN_weight + df$MOVE_AUTO_weight 
+
 df$Manual_count <- df$MOVE_MAN_count + df$CHANGE_AUTO_AA_count + df$CHANGE_AUTO_WW_count + df$ADAPTATIONS_count
 
 df$Month <-  as.numeric(format(df$DATE_EVENT, format = "%m"))
@@ -102,7 +106,7 @@ df <- subset(df, TotalWL > low & TotalWL < up)
 
 
 # Write df to Excel file (commented out)
-write.csv(df, "./data/preprocess_data/CRIPTON_60_MINUTES_anonymized_all_prepared.csv", row.names = TRUE)
+# write.csv(df, "./data/preprocess_data/CRIPTON_60_MINUTES_anonymized_all_prepared.csv", row.names = TRUE)
 
 
 # Data Analysis --------------------------------
@@ -110,18 +114,6 @@ write.csv(df, "./data/preprocess_data/CRIPTON_60_MINUTES_anonymized_all_prepared
 p <- ggplot(data = df, aes(x = "", y = TotalWL)) +
   geom_boxplot()
 print(p)
-
-# Correlation plot
-df2 <- df %>% 
-  select(Error_rate, Error_Count, Auto_fraction, TotalWL, PHONE, MESSAGE_OTHER_count, 
-         Hour, JUSTIF_count, ADAPTATIONS_count, TRAF_COMP, TRAF_DENS_1)
-
-vcorr <- round(cor(df2, use = "complete.obs"), 3)
-print(vcorr)
-
-# Write correlation matrix to Excel file (commented out)
-# write.csv(vcorr, "./data/preprocess_data/CRIPTON_60_MINUTES_anonymized_all_corr.csv", row.names = TRUE)
-
 
 # Commented out code for future reference --------------------------------
 # df <- df %>% filter(TotalWL < 207)

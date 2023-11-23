@@ -1,7 +1,7 @@
 library(fixest)
 library(MASS)
 source("./Plot.R")
-source("./Functions.R")
+source("utils/Functions.R")
 
 library(stargazer)
 
@@ -16,7 +16,7 @@ library(stargazer)
 
 #####
 
-m1= fenegbin(Error_Count ~ TotalWL + #print dataframe class
+m1= fenegbin(Error_Count ~ TotalWL + 
  +PHONE+JUSTIF_count + MESSAGE_OTHER_count + Hour-1| DATE_EVENT+RAILWAY_DAYS+AGE,vcov = "twoway", data = df
 )
 m2= fenegbin(Error_Count ~ TotalWL + Manual_fraction +PHONE+JUSTIF_count + MESSAGE_OTHER_count + Hour+
@@ -54,9 +54,6 @@ ggplot() +
   geom_qq(aes(sample = rstandard(fit))) +
   geom_abline(color = "red") +
   coord_fixed()
-
-
-
 
 
 
