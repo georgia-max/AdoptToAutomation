@@ -95,37 +95,34 @@ print(regression_table)
 
 
 
+
 # Define regression formulas (Error Count Model) ---------------------- 
 
-#####
+formula1.1<- make_formula("Error_Count", c("TotalWL", "Auto_fraction", "PHONE", "JUSTIF_count", "SAFETY_count", "MESSAGE_OTHER_count", "Hour", "TRAF_COMP", "hours_worked"), "DATE_EVENT + RSE_ID_ANONYM")
+formula1.2 <- make_formula("Error_Count", c("TotalWL", "Auto_fraction", "PHONE", "JUSTIF_count", "SAFETY_count", "MESSAGE_OTHER_count", "Hour", "TRAF_COMP"), "DATE_EVENT + RSE_ID_ANONYM")
 
-#Error Count NB regression  
-# 
-# m1= fenegbin(Error_Count ~ TotalWL + Manual_fraction 
-#                +PHONE+JUSTIF_count + MESSAGE_OTHER_count + Hour + TRAF_COMP
-#              | DATE_EVENT+ RSE_ID_ANONYM,vcov = "twoway", data = df
-# )
-# m2= fenegbin(Error_Count ~ TotalWL + Manual_fraction +PHONE+JUSTIF_count + MESSAGE_OTHER_count + Hour+TRAF_COMP+ 
-#                Manual_fraction_sq+TotalWL_sq| DATE_EVENT+RSE_ID_ANONYM,vcov = "twoway", data = df
-# )
-# 
-# 
-# 
-m2.1= fenegbin(Error_Count ~ TotalWL + Auto_fraction 
-               +PHONE+JUSTIF_count + MESSAGE_OTHER_count + Hour+ TRAF_COMP
-             | DATE_EVENT+RSE_ID_ANONYM,vcov = "twoway", data = df
-)
-m2.2= fenegbin(Error_Count ~ TotalWL + Auto_fraction + Auto_fraction_sq+TotalWL_sq
-               +PHONE+JUSTIF_count + MESSAGE_OTHER_count + Hour+TRAF_COMP
-               | DATE_EVENT+RSE_ID_ANONYM,vcov = "twoway", data = df
+formula2 <- make_formula("Error_Count", c("TotalWL", "Auto_fraction", "PHONE", "JUSTIF_count", "SAFETY_count", "MESSAGE_OTHER_count", "Hour", "TRAF_COMP", "Auto_fraction_sq", "TotalWL_sq"), "DATE_EVENT + RSE_ID_ANONYM")
+formula3 <- make_formula("Error_Count", c("TotalWL", "Auto_fraction", "PHONE", "JUSTIF_count", "SAFETY_count", "MESSAGE_OTHER_count", "Hour", "TRAF_COMP", "Auto_fraction_sq", "TotalWL_sq", "TotalWL*Auto_fraction",  "Auto_fraction_sq*TotalWL_sq"), "DATE_EVENT + RSE_ID_ANONYM")
+
+
+m2.1.1 = fenegbin(formula1.1,vcov = "twoway", data = df)
+m2.1.2 = fenegbin(formula1.2,vcov = "twoway", data = df)
+
+
+m2.2= fenegbin(formula2,vcov = "twoway", data = df
 )
 
-m2.3= fenegbin(Error_Count ~ TotalWL + Auto_fraction + TotalWL*Auto_fraction + Auto_fraction_sq+TotalWL_sq + Auto_fraction_sq*TotalWL_sq
-               + PHONE+JUSTIF_count + MESSAGE_OTHER_count + Hour+ TRAF_COMP
-              | DATE_EVENT+RSE_ID_ANONYM,vcov = "twoway", data = df
+m2.3= fenegbin(formula3,vcov = "twoway", data = df
 )
 
-etable(m2.1,m2.2,m2.3)
+save(m2.1.1, file = "Result/nb_linear_1.RData")
+save(m2.1.2, file = "Result/nb_linear_2.RData")
+save(m2.2, file = "Result/nb_quadratic.RData")
+save(m2.3, file = "Result/nb_interaction.RData")
+
+
+nb_model_result <-etable(m2.1.1, m2.1.2,m2.2,m2.3)
+write.csv(nb_model_result, "Result/nb_result_main.csv", row.names = TRUE)
 
 #############
 

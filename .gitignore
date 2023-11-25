@@ -1,10 +1,13 @@
 .Rproj.user
 .Rhistory
-.RData
+*.RData
 .Ruserdata
-.csv
+*.csv
 data
 .docx
 .png
 *.png
+.RData
 
+.csv
+Result/

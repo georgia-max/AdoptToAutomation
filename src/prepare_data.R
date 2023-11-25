@@ -104,16 +104,55 @@ up <- Q[2] + 1.5 * iqr  # Upper Range
 low <- Q[1] - 1.5 * iqr # Lower Range
 df <- subset(df, TotalWL > low & TotalWL < up)
 
+# Calculate IQR and filter out outliers in TRAF_DENS
+Q <- quantile(df$TRAF_DENS_1, probs = c(.25, .75), na.rm = FALSE)
+iqr <- IQR(df$TRAF_DENS_1)
+up <- Q[2] + 1.5 * iqr  # Upper Range
+low <- Q[1] - 1.5 * iqr # Lower Range
+df <- subset(df, TRAF_DENS_1 > low & TRAF_DENS_1 < up)
+
+# Calculate IQR and filter out outliers in TRAF_COMP
+Q <- quantile(df$TRAF_COMP, probs = c(.25, .75), na.rm = FALSE)
+iqr <- IQR(df$TRAF_COMP)
+up <- Q[2] + 1.5 * iqr  # Upper Range
+low <- Q[1] - 1.5 * iqr # Lower Range
+df <- subset(df, TRAF_COMP > low & TRAF_COMP < up)
+
+# normalized Traffic complexity and Traffic Density to 0 - 1
+df$TRAF_COMP <- (df$TRAF_COMP - min(df$TRAF_COMP)) / (max(df$TRAF_COMP) - min(df$TRAF_COMP))
+df$TRAF_DENS_1 <- (df$TRAF_DENS_1 - min(df$TRAF_DENS_1)) / (max(df$TRAF_DENS_1) - min(df$TRAF_DENS_1))
 
 # Write df to Excel file (commented out)
 # write.csv(df, "./data/preprocess_data/CRIPTON_60_MINUTES_anonymized_all_prepared.csv", row.names = TRUE)
 
+save(df, file = "Result/df_preprocess.RData")
+# load("Result/df_preprocess.RData")
 
 # Data Analysis --------------------------------
 # Boxplot for workload 
 p <- ggplot(data = df, aes(x = "", y = TotalWL)) +
   geom_boxplot()
 print(p)
+
+# Histograms 
+
+# Identify numeric columns
+numeric_cols <- sapply(df, is.numeric)
+
+# Loop through numeric columns and create histograms
+for (col_name in names(numeric_cols)[numeric_cols]) {
+  # Create histogram
+  p <- ggplot(df, aes_string(x = col_name)) + 
+    geom_histogram(bins = 30, fill = "blue", color = "black") +
+    theme_minimal() +
+    theme(panel.background = element_rect(fill = "white")) +
+    ggtitle(paste("Histogram of", col_name))
+  
+  # Save the plot (replace 'your_folder' with the path to your folder)
+  file_name <- paste("Result/img/histogram_of_", col_name, ".png", sep = "")
+  ggsave(file_name, plot = p, width = 10, height = 8)
+}
+
 
 # Commented out code for future reference --------------------------------
 # df <- df %>% filter(TotalWL < 207)
