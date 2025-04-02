@@ -1,5 +1,14 @@
-# AdoptToAutomation
-This repository contains the R code for Adopt to Automation Paper that suppose to publish to MSOM. 
+# The Relationships among Workload, Automation Reliance, and Human Errors in Safety-Critical Monitoring Roles
+
+[![License](https://img.shields.io/badge/license-MIT-blue.svg)](https://opensource.org/licenses/MIT)
+[![Python](https://img.shields.io/badge/python-3.11%2B-blue.svg)](https://www.python.org/downloads/)
+
+
+This repository contains the R code for our study on the interplay between human workload, automation usage, and error rates in safety-critical socio-technical systems. Despite the increasing use of automation to reduce human workload, human error remains a major contributor to operational failures—especially in high-stakes environments like railway traffic control.
+
+Link to paper: https://www.sciencedirect.com/science/article/pii/S0925753524003655?via%3Dihub
+Citation: Liu N., Triantis, K., Madsen, P., & Roets, B. (2025). The Relationships among Workload, Automation Reliance, and Human Errors in Safety-Critical Monitoring Roles. Safety Science, 185, 106775. https://doi.org/10.1016/j.ssci.2024.106775![image](https://github.com/user-attachments/assets/7dd660c2-5415-47cd-b87e-b8925b3219bd)
+
 
 
 ## Getting Started
